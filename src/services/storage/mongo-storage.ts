@@ -1,172 +1,327 @@
+import { MongoClient, Db, Collection } from 'mongodb';
 import { Storage } from './index';
 import { InstanceData } from '../../types/instance';
 import { User } from '../../types/user';
 import { Passkey } from '../../types/passkey';
 import { Flag, Comment, Rating } from '../../types/flag';
+import { config } from '../../config';
+import defaultsJson from '../../../data/defaults.json';
 
-// MongoDB storage implementation placeholder
-// This will be implemented for production use
+const COLLECTION_NAME = 'instances';
 
 export class MongoStorage implements Storage {
+  private client: MongoClient;
+  private db: Db | null = null;
+  private collection: Collection<InstanceData> | null = null;
+  private connectionPromise: Promise<void> | null = null;
+
   constructor() {
-    // MongoDB connection will be initialized here
-    console.log('MongoDB storage initialized (placeholder)');
+    if (!config.mongoUri) {
+      throw new Error('MongoDB URI not configured. Set MONGO_URI environment variable.');
+    }
+    this.client = new MongoClient(config.mongoUri);
+    this.connectionPromise = this.connect();
+  }
+
+  private async connect(): Promise<void> {
+    try {
+      await this.client.connect();
+      this.db = this.client.db();
+      this.collection = this.db.collection<InstanceData>(COLLECTION_NAME);
+      console.log('MongoDB storage initialized');
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      throw error;
+    }
+  }
+
+  private async ensureConnected(): Promise<Collection<InstanceData>> {
+    if (this.connectionPromise) {
+      await this.connectionPromise;
+      this.connectionPromise = null;
+    }
+    if (!this.collection) {
+      throw new Error('MongoDB collection not initialized');
+    }
+    return this.collection;
+  }
+
+  private async readInstance(instanceId: string): Promise<InstanceData | null> {
+    const collection = await this.ensureConnected();
+    const doc = await collection.findOne({ id: instanceId });
+    return doc || null;
+  }
+
+  private async writeInstance(instanceId: string, data: InstanceData): Promise<void> {
+    const collection = await this.ensureConnected();
+    await collection.replaceOne({ id: instanceId }, data, { upsert: true });
+  }
+
+  private getDefaults(): Omit<InstanceData, 'id' | 'createdAt'> {
+    return {
+      users: defaultsJson.users as User[],
+      passkeys: defaultsJson.passkeys as Passkey[],
+      flags: defaultsJson.flags as Flag[],
+      comments: defaultsJson.comments as Comment[],
+      ratings: defaultsJson.ratings as Rating[],
+    };
   }
 
   // Instance operations
-  async instanceExists(_instanceId: string): Promise<boolean> {
-    throw new Error('MongoDB storage not implemented yet');
+  async instanceExists(instanceId: string): Promise<boolean> {
+    const collection = await this.ensureConnected();
+    const count = await collection.countDocuments({ id: instanceId }, { limit: 1 });
+    return count > 0;
   }
 
-  async createInstance(_instanceId: string): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createInstance(instanceId: string): Promise<void> {
+    const defaults = this.getDefaults();
+    const data: InstanceData = {
+      id: instanceId,
+      createdAt: new Date().toISOString(),
+      ...defaults,
+    };
+    await this.writeInstance(instanceId, data);
   }
 
-  async deleteInstance(_instanceId: string): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deleteInstance(instanceId: string): Promise<void> {
+    const collection = await this.ensureConnected();
+    await collection.deleteOne({ id: instanceId });
   }
 
-  async resetInstance(_instanceId: string): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async resetInstance(instanceId: string): Promise<void> {
+    await this.deleteInstance(instanceId);
+    await this.createInstance(instanceId);
   }
 
-  async getInstanceData(_instanceId: string): Promise<InstanceData | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getInstanceData(instanceId: string): Promise<InstanceData | null> {
+    return this.readInstance(instanceId);
   }
 
   // User operations
-  async getUsers(_instanceId: string): Promise<User[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getUsers(instanceId: string): Promise<User[]> {
+    const data = await this.readInstance(instanceId);
+    return data?.users || [];
   }
 
-  async getUserById(_instanceId: string, _userId: number): Promise<User | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getUserById(instanceId: string, userId: number): Promise<User | null> {
+    const users = await this.getUsers(instanceId);
+    return users.find((u) => u.id === userId) || null;
   }
 
-  async getUserByUsername(_instanceId: string, _username: string): Promise<User | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getUserByUsername(instanceId: string, username: string): Promise<User | null> {
+    const users = await this.getUsers(instanceId);
+    return users.find((u) => u.username.toLowerCase() === username.toLowerCase()) || null;
   }
 
-  async createUser(_instanceId: string, _user: User): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createUser(instanceId: string, user: User): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.users.push(user);
+    await this.writeInstance(instanceId, data);
   }
 
-  async updateUser(_instanceId: string, _user: User): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async updateUser(instanceId: string, user: User): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    const index = data.users.findIndex((u) => u.id === user.id);
+    if (index === -1) throw new Error('User not found');
+    data.users[index] = user;
+    await this.writeInstance(instanceId, data);
   }
 
-  async deleteUser(_instanceId: string, _userId: number): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deleteUser(instanceId: string, userId: number): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.users = data.users.filter((u) => u.id !== userId);
+    // Also delete associated passkeys
+    data.passkeys = data.passkeys.filter((p) => p.userId !== userId);
+    await this.writeInstance(instanceId, data);
   }
 
-  async getNextUserId(_instanceId: string): Promise<number> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getNextUserId(instanceId: string): Promise<number> {
+    const users = await this.getUsers(instanceId);
+    if (users.length === 0) return 1;
+    return Math.max(...users.map((u) => u.id)) + 1;
   }
 
   // Passkey operations
-  async getPasskeys(_instanceId: string): Promise<Passkey[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getPasskeys(instanceId: string): Promise<Passkey[]> {
+    const data = await this.readInstance(instanceId);
+    return data?.passkeys || [];
   }
 
-  async getPasskeyById(_instanceId: string, _passkeyId: number): Promise<Passkey | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getPasskeyById(instanceId: string, passkeyId: number): Promise<Passkey | null> {
+    const passkeys = await this.getPasskeys(instanceId);
+    return passkeys.find((p) => p.id === passkeyId) || null;
   }
 
-  async getPasskeysByUserId(_instanceId: string, _userId: number): Promise<Passkey[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getPasskeysByUserId(instanceId: string, userId: number): Promise<Passkey[]> {
+    const passkeys = await this.getPasskeys(instanceId);
+    return passkeys.filter((p) => p.userId === userId);
   }
 
   async getPasskeyByCredentialId(
-    _instanceId: string,
-    _credentialId: string
+    instanceId: string,
+    credentialId: string
   ): Promise<{ user: User; passkey: Passkey } | null> {
-    throw new Error('MongoDB storage not implemented yet');
+    const passkeys = await this.getPasskeys(instanceId);
+    // Get the last matching credential (most recently added)
+    // This matters for credential overwrite attacks where a newer credential
+    // with the same ID should take precedence
+    const matching = passkeys.filter((p) => p.credentialId === credentialId);
+    const passkey = matching.length > 0 ? matching[matching.length - 1] : null;
+    if (!passkey) return null;
+
+    const user = await this.getUserById(instanceId, passkey.userId);
+    if (!user) return null;
+
+    return { user, passkey };
   }
 
-  async createPasskey(_instanceId: string, _passkey: Passkey): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createPasskey(instanceId: string, passkey: Passkey): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.passkeys.push(passkey);
+    await this.writeInstance(instanceId, data);
   }
 
-  async updatePasskey(_instanceId: string, _passkey: Passkey): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async updatePasskey(instanceId: string, passkey: Passkey): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    const index = data.passkeys.findIndex((p) => p.id === passkey.id);
+    if (index === -1) throw new Error('Passkey not found');
+    data.passkeys[index] = passkey;
+    await this.writeInstance(instanceId, data);
   }
 
-  async deletePasskey(_instanceId: string, _passkeyId: number): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deletePasskey(instanceId: string, passkeyId: number): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.passkeys = data.passkeys.filter((p) => p.id !== passkeyId);
+    await this.writeInstance(instanceId, data);
   }
 
-  async getNextPasskeyId(_instanceId: string): Promise<number> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getNextPasskeyId(instanceId: string): Promise<number> {
+    const passkeys = await this.getPasskeys(instanceId);
+    if (passkeys.length === 0) return 1;
+    return Math.max(...passkeys.map((p) => p.id)) + 1;
   }
 
   // Flag operations
-  async getFlags(_instanceId: string): Promise<Flag[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getFlags(instanceId: string): Promise<Flag[]> {
+    const data = await this.readInstance(instanceId);
+    return data?.flags || [];
   }
 
-  async getFlagById(_instanceId: string, _flagId: number): Promise<Flag | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getFlagById(instanceId: string, flagId: number): Promise<Flag | null> {
+    const flags = await this.getFlags(instanceId);
+    return flags.find((f) => f.id === flagId) || null;
   }
 
-  async getFlagsByUserId(_instanceId: string, _userId: number): Promise<Flag[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getFlagsByUserId(instanceId: string, userId: number): Promise<Flag[]> {
+    const flags = await this.getFlags(instanceId);
+    return flags.filter((f) => f.userId === userId);
   }
 
-  async createFlag(_instanceId: string, _flag: Flag): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createFlag(instanceId: string, flag: Flag): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.flags.push(flag);
+    await this.writeInstance(instanceId, data);
   }
 
-  async updateFlag(_instanceId: string, _flag: Flag): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async updateFlag(instanceId: string, flag: Flag): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    const index = data.flags.findIndex((f) => f.id === flag.id);
+    if (index === -1) throw new Error('Flag not found');
+    data.flags[index] = flag;
+    await this.writeInstance(instanceId, data);
   }
 
-  async deleteFlag(_instanceId: string, _flagId: number): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deleteFlag(instanceId: string, flagId: number): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.flags = data.flags.filter((f) => f.id !== flagId);
+    // Also delete associated comments and ratings
+    data.comments = data.comments.filter((c) => c.flagId !== flagId);
+    data.ratings = data.ratings.filter((r) => r.flagId !== flagId);
+    await this.writeInstance(instanceId, data);
   }
 
-  async getNextFlagId(_instanceId: string): Promise<number> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getNextFlagId(instanceId: string): Promise<number> {
+    const flags = await this.getFlags(instanceId);
+    if (flags.length === 0) return 1;
+    return Math.max(...flags.map((f) => f.id)) + 1;
   }
 
   // Comment operations
-  async getCommentsByFlagId(_instanceId: string, _flagId: number): Promise<Comment[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getCommentsByFlagId(instanceId: string, flagId: number): Promise<Comment[]> {
+    const data = await this.readInstance(instanceId);
+    return data?.comments.filter((c) => c.flagId === flagId) || [];
   }
 
-  async createComment(_instanceId: string, _comment: Comment): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createComment(instanceId: string, comment: Comment): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.comments.push(comment);
+    await this.writeInstance(instanceId, data);
   }
 
-  async deleteComment(_instanceId: string, _commentId: number): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deleteComment(instanceId: string, commentId: number): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.comments = data.comments.filter((c) => c.id !== commentId);
+    await this.writeInstance(instanceId, data);
   }
 
-  async getNextCommentId(_instanceId: string): Promise<number> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getNextCommentId(instanceId: string): Promise<number> {
+    const data = await this.readInstance(instanceId);
+    const comments = data?.comments || [];
+    if (comments.length === 0) return 1;
+    return Math.max(...comments.map((c) => c.id)) + 1;
   }
 
   // Rating operations
-  async getRatingsByFlagId(_instanceId: string, _flagId: number): Promise<Rating[]> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getRatingsByFlagId(instanceId: string, flagId: number): Promise<Rating[]> {
+    const data = await this.readInstance(instanceId);
+    return data?.ratings.filter((r) => r.flagId === flagId) || [];
   }
 
-  async getUserRating(
-    _instanceId: string,
-    _flagId: number,
-    _userId: number
-  ): Promise<Rating | null> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getUserRating(instanceId: string, flagId: number, userId: number): Promise<Rating | null> {
+    const data = await this.readInstance(instanceId);
+    return data?.ratings.find((r) => r.flagId === flagId && r.userId === userId) || null;
   }
 
-  async createOrUpdateRating(_instanceId: string, _rating: Rating): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async createOrUpdateRating(instanceId: string, rating: Rating): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+
+    const existingIndex = data.ratings.findIndex(
+      (r) => r.flagId === rating.flagId && r.userId === rating.userId
+    );
+
+    if (existingIndex !== -1) {
+      data.ratings[existingIndex] = rating;
+    } else {
+      data.ratings.push(rating);
+    }
+
+    await this.writeInstance(instanceId, data);
   }
 
-  async deleteRating(_instanceId: string, _ratingId: number): Promise<void> {
-    throw new Error('MongoDB storage not implemented yet');
+  async deleteRating(instanceId: string, ratingId: number): Promise<void> {
+    const data = await this.readInstance(instanceId);
+    if (!data) throw new Error('Instance not found');
+    data.ratings = data.ratings.filter((r) => r.id !== ratingId);
+    await this.writeInstance(instanceId, data);
   }
 
-  async getNextRatingId(_instanceId: string): Promise<number> {
-    throw new Error('MongoDB storage not implemented yet');
+  async getNextRatingId(instanceId: string): Promise<number> {
+    const data = await this.readInstance(instanceId);
+    const ratings = data?.ratings || [];
+    if (ratings.length === 0) return 1;
+    return Math.max(...ratings.map((r) => r.id)) + 1;
   }
 }

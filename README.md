@@ -46,8 +46,6 @@ docker run -d \
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
-
 services:
   app:
     image: ghcr.io/lonetis/fun-with-flags:latest

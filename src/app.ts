@@ -42,6 +42,11 @@ app.use(
 // Static files
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Health check endpoint (before instance middleware to avoid creating instances)
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Instance and verifier middleware
 app.use(instanceMiddleware);
 app.use(verifierMiddleware);

@@ -324,4 +324,18 @@ export class MongoStorage implements Storage {
     if (ratings.length === 0) return 1;
     return Math.max(...ratings.map((r) => r.id)) + 1;
   }
+
+  // Cleanup operations
+  async getExpiredInstanceIds(maxAgeMs: number): Promise<string[]> {
+    const collection = await this.ensureConnected();
+    const cutoffDate = new Date(Date.now() - maxAgeMs);
+
+    const cursor = collection.find(
+      { createdAt: { $lt: cutoffDate.toISOString() } },
+      { projection: { id: 1 } }
+    );
+
+    const docs = await cursor.toArray();
+    return docs.map((doc) => doc.id);
+  }
 }

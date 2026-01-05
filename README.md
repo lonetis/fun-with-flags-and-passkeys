@@ -25,6 +25,8 @@ Use Docker to deploy in production.
 | `ORIGIN` | Expected origin for WebAuthn | `http://localhost:3000` | **Yes** |
 | `USE_MONGO` | Enable MongoDB storage | `false` | No |
 | `MONGO_URI` | MongoDB connection string | (empty) | If USE_MONGO=true |
+| `INSTANCE_MAX_AGE_MS` | Max instance age before cleanup (ms) | `86400000` (24h) | No |
+| `CLEANUP_INTERVAL_MS` | Cleanup check interval (ms) | `3600000` (1h) | No |
 
 ### Pull from GitHub Container Registry
 

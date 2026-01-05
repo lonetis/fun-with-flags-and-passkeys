@@ -302,4 +302,37 @@ export class JsonStorage implements Storage {
     if (ratings.length === 0) return 1;
     return Math.max(...ratings.map((r) => r.id)) + 1;
   }
+
+  // Cleanup operations
+  async getExpiredInstanceIds(maxAgeMs: number): Promise<string[]> {
+    const cutoffTime = Date.now() - maxAgeMs;
+    const expiredIds: string[] = [];
+
+    if (!fs.existsSync(DATA_DIR)) {
+      return expiredIds;
+    }
+
+    const files = fs.readdirSync(DATA_DIR);
+
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+
+      const instanceId = file.replace('.json', '');
+      const filePath = this.getFilePath(instanceId);
+
+      try {
+        const data = fs.readFileSync(filePath, 'utf-8');
+        const instance = JSON.parse(data) as InstanceData;
+        const createdAt = new Date(instance.createdAt).getTime();
+
+        if (createdAt < cutoffTime) {
+          expiredIds.push(instanceId);
+        }
+      } catch (error) {
+        console.error(`[Cleanup] Error reading instance ${instanceId}:`, error);
+      }
+    }
+
+    return expiredIds;
+  }
 }

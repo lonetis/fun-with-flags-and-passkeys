@@ -55,6 +55,9 @@ export interface Storage {
   createOrUpdateRating(instanceId: string, rating: Rating): Promise<void>;
   deleteRating(instanceId: string, ratingId: number): Promise<void>;
   getNextRatingId(instanceId: string): Promise<number>;
+
+  // Cleanup operations
+  getExpiredInstanceIds(maxAgeMs: number): Promise<string[]>;
 }
 
 let storageInstance: Storage | null = null;

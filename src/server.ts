@@ -1,4 +1,5 @@
 import app from './app';
+import { startCleanupScheduler } from './services/cleanup';
 
 const PORT = process.env.PORT || 3000;
 
@@ -12,4 +13,6 @@ app.listen(PORT, () => {
   ║                                                           ║
   ╚═══════════════════════════════════════════════════════════╝
   `);
+
+  startCleanupScheduler();
 });

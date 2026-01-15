@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Fun with Flags is a WebAuthn/Passkey security learning platform. It provides:
+Fun with Flags is a WebAuthn/Passkey learning platform. It provides:
 - Demo verifiers showing correct passkey implementations
 - Security verifiers with intentional vulnerabilities (CTF-style)
 - Isolated instances per browser session

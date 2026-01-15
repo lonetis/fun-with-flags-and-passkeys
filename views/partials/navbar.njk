@@ -16,22 +16,22 @@
             <i class="bi bi-house"></i> Home
           </a>
         </li>
-        {% if user %}
         <li class="nav-item">
-          <a class="nav-link" href="/flags/new">
-            <i class="bi bi-plus-circle"></i> Add Flag
+          <a class="nav-link" href="/guide">
+            <i class="bi bi-book"></i> Guide
           </a>
         </li>
-        {% endif %}
-      </ul>
-
-      <ul class="navbar-nav align-items-center">
+        <li class="nav-item">
+          <a class="nav-link" href="/verifiers">
+            <i class="bi bi-shield-check"></i> Verifiers
+          </a>
+        </li>
         <!-- Instance Control -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
             <i class="bi bi-box"></i> Instance
           </a>
-          <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 350px;">
+          <div class="dropdown-menu p-3" style="min-width: 350px;">
             <h6 class="dropdown-header px-0">Current Instance</h6>
             <div class="d-flex align-items-center gap-2 py-1">
               <code class="small text-break flex-grow-1" id="current-instance-id">{{ instanceId }}</code>
@@ -60,19 +60,16 @@
             </div>
           </div>
         </li>
-
-        <!-- Verifiers -->
+        {% if user %}
         <li class="nav-item">
-          <a class="nav-link" href="/verifiers">
-            <i class="bi bi-shield-check"></i> Verifiers
+          <a class="nav-link" href="/flags/new">
+            <i class="bi bi-plus-circle"></i> Add Flag
           </a>
         </li>
+        {% endif %}
+      </ul>
 
-        <!-- Spacer -->
-        <li class="nav-item d-none d-lg-block">
-          <span class="nav-link px-2"></span>
-        </li>
-
+      <ul class="navbar-nav align-items-center">
         <!-- User Menu -->
         {% if user %}
         <li class="nav-item dropdown">
@@ -91,13 +88,13 @@
         </li>
         {% else %}
         <!-- Login Button - Blue (Authentication) -->
-        <li class="nav-item">
-          <a class="btn btn-primary btn-sm me-2" href="/login">
+        <li class="nav-item py-2 py-lg-0">
+          <a class="btn btn-primary btn-sm me-lg-2" href="/login">
             <i class="bi bi-box-arrow-in-right"></i> Login
           </a>
         </li>
         <!-- Register Button - Green (Registration) -->
-        <li class="nav-item">
+        <li class="nav-item py-2 py-lg-0">
           <a class="btn btn-success btn-sm" href="/register">
             <i class="bi bi-person-plus"></i> Register
           </a>

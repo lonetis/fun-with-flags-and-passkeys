@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 LABEL org.opencontainers.image.title="Fun with Flags"
-LABEL org.opencontainers.image.description="WebAuthn/Passkey security learning platform"
+LABEL org.opencontainers.image.description="WebAuthn/Passkey learning platform"
 LABEL org.opencontainers.image.source="https://github.com/lonetis/fun-with-flags"
 
 WORKDIR /app

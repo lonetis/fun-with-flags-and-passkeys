@@ -17,6 +17,10 @@ router.get('/', (req, res) => {
   res.redirect('/flags');
 });
 
+router.get('/guide', (req, res) => {
+  res.render('pages/guide', { title: 'How to Use - Fun with Flags' });
+});
+
 // Auth routes
 router.use('/', authRoutes);
 

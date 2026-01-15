@@ -9,7 +9,7 @@ const router = Router();
 // GET /login
 router.get('/login', redirectIfAuthenticated, (req: Request, res: Response) => {
   res.render('pages/login.njk', {
-    title: 'Login - Fun with Flags',
+    title: 'Login - Fun with Flags (and Passkeys)',
   });
 });
 
@@ -23,7 +23,7 @@ router.post(
 
       if (!username || !password) {
         return res.render('pages/login.njk', {
-          title: 'Login - Fun with Flags',
+          title: 'Login - Fun with Flags (and Passkeys)',
           error: 'Username and password are required',
         });
       }
@@ -33,7 +33,7 @@ router.post(
 
       if (!user) {
         return res.render('pages/login.njk', {
-          title: 'Login - Fun with Flags',
+          title: 'Login - Fun with Flags (and Passkeys)',
           error: 'Invalid username or password',
         });
       }
@@ -41,7 +41,7 @@ router.post(
       const validPassword = await bcrypt.compare(password, user.passwordHash);
       if (!validPassword) {
         return res.render('pages/login.njk', {
-          title: 'Login - Fun with Flags',
+          title: 'Login - Fun with Flags (and Passkeys)',
           error: 'Invalid username or password',
         });
       }
@@ -76,7 +76,7 @@ router.get('/login/2fa', (req: Request, res: Response) => {
   }
 
   res.render('pages/login-2fa.njk', {
-    title: '2FA Verification - Fun with Flags',
+    title: '2FA Verification - Fun with Flags (and Passkeys)',
   });
 });
 
@@ -111,7 +111,7 @@ router.post('/login/check-username', async (req: Request, res: Response, next: N
 // GET /register
 router.get('/register', redirectIfAuthenticated, (req: Request, res: Response) => {
   res.render('pages/register.njk', {
-    title: 'Register - Fun with Flags',
+    title: 'Register - Fun with Flags (and Passkeys)',
   });
 });
 
@@ -132,7 +132,7 @@ router.post(
       // Validation
       if (!username || !password || !confirmPassword) {
         return res.render('pages/register.njk', {
-          title: 'Register - Fun with Flags',
+          title: 'Register - Fun with Flags (and Passkeys)',
           error: 'All fields are required',
           username,
         });
@@ -140,7 +140,7 @@ router.post(
 
       if (password !== confirmPassword) {
         return res.render('pages/register.njk', {
-          title: 'Register - Fun with Flags',
+          title: 'Register - Fun with Flags (and Passkeys)',
           error: 'Passwords do not match',
           username,
         });
@@ -148,7 +148,7 @@ router.post(
 
       if (password.length < 4) {
         return res.render('pages/register.njk', {
-          title: 'Register - Fun with Flags',
+          title: 'Register - Fun with Flags (and Passkeys)',
           error: 'Password must be at least 4 characters',
           username,
         });
@@ -160,7 +160,7 @@ router.post(
       const existingUser = await storage.getUserByUsername(req.instanceId, username);
       if (existingUser) {
         return res.render('pages/register.njk', {
-          title: 'Register - Fun with Flags',
+          title: 'Register - Fun with Flags (and Passkeys)',
           error: 'Username already taken',
           username,
         });

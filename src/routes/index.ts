@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/guide', (req, res) => {
-  res.render('pages/guide', { title: 'How to Use - Fun with Flags' });
+  res.render('pages/guide', { title: 'How to Use - Fun with Flags (and Passkeys)' });
 });
 
 // Auth routes

@@ -37,7 +37,7 @@ router.get('/', requireAuth, async (req: Request, res: Response, next: NextFunct
     const enrichedPasskeys = enrichPasskeys(passkeys);
 
     res.render('pages/settings.njk', {
-      title: 'Settings - Fun with Flags',
+      title: 'Settings - Fun with Flags (and Passkeys)',
       account: {
         username: user.username,
         passkeys: enrichedPasskeys,
@@ -82,7 +82,7 @@ router.post('/password', requireAuth, async (req: Request, res: Response, next: 
     const validPassword = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!validPassword) {
       return res.render('pages/settings.njk', {
-        title: 'Settings - Fun with Flags',
+        title: 'Settings - Fun with Flags (and Passkeys)',
         account: accountData,
         passwordError: 'Current password is incorrect',
       });
@@ -91,7 +91,7 @@ router.post('/password', requireAuth, async (req: Request, res: Response, next: 
     // Validate new password
     if (newPassword !== confirmPassword) {
       return res.render('pages/settings.njk', {
-        title: 'Settings - Fun with Flags',
+        title: 'Settings - Fun with Flags (and Passkeys)',
         account: accountData,
         passwordError: 'New passwords do not match',
       });
@@ -99,7 +99,7 @@ router.post('/password', requireAuth, async (req: Request, res: Response, next: 
 
     if (newPassword.length < 4) {
       return res.render('pages/settings.njk', {
-        title: 'Settings - Fun with Flags',
+        title: 'Settings - Fun with Flags (and Passkeys)',
         account: accountData,
         passwordError: 'Password must be at least 4 characters',
       });
@@ -110,7 +110,7 @@ router.post('/password', requireAuth, async (req: Request, res: Response, next: 
     await storage.updateUser(req.instanceId, user);
 
     res.render('pages/settings.njk', {
-      title: 'Settings - Fun with Flags',
+      title: 'Settings - Fun with Flags (and Passkeys)',
       account: accountData,
       passwordSuccess: 'Password updated successfully',
     });

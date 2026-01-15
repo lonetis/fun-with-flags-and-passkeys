@@ -1,4 +1,4 @@
-# Fun with Flags - Passkey Learning Platform
+# Fun with Flags (and Passkeys) - Passkey Learning Platform
 
 A Big Bang Theory themed platform for learning WebAuthn/Passkeys through interactive demos and CTF-style vulnerability exploitation.
 

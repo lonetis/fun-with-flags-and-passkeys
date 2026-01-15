@@ -44,7 +44,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     );
 
     res.render('pages/home.njk', {
-      title: 'Fun with Flags',
+      title: 'Fun with Flags (and Passkeys)',
       flags: flagsWithDetails,
     });
   } catch (error) {
@@ -55,7 +55,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET /flags/new - Create new flag form
 router.get('/new', requireAuth, (req: Request, res: Response) => {
   res.render('pages/flag-create.njk', {
-    title: 'Create Flag - Fun with Flags',
+    title: 'Create Flag - Fun with Flags (and Passkeys)',
   });
 });
 
@@ -67,7 +67,7 @@ router.post('/', requireAuth, async (req: Request, res: Response, next: NextFunc
     // Validation
     if (!title || !description || !imageUrl || !country) {
       return res.render('pages/flag-create.njk', {
-        title: 'Create Flag - Fun with Flags',
+        title: 'Create Flag - Fun with Flags (and Passkeys)',
         error: 'All fields are required',
         form: { title, description, imageUrl, country },
       });
@@ -156,7 +156,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const isOwner = req.session?.user?.id === flag.userId;
 
     res.render('pages/flag-detail.njk', {
-      title: `${flag.title} - Fun with Flags`,
+      title: `${flag.title} - Fun with Flags (and Passkeys)`,
       flag: flagWithDetails,
       isOwner,
     });
@@ -197,7 +197,7 @@ router.get('/:id/edit', requireAuth, async (req: Request, res: Response, next: N
     }
 
     res.render('pages/flag-edit.njk', {
-      title: `Edit ${flag.title} - Fun with Flags`,
+      title: `Edit ${flag.title} - Fun with Flags (and Passkeys)`,
       flag,
     });
   } catch (error) {
@@ -241,7 +241,7 @@ router.post('/:id', requireAuth, async (req: Request, res: Response, next: NextF
     // Validation
     if (!title || !description || !imageUrl || !country) {
       return res.render('pages/flag-edit.njk', {
-        title: `Edit ${flag.title} - Fun with Flags`,
+        title: `Edit ${flag.title} - Fun with Flags (and Passkeys)`,
         error: 'All fields are required',
         flag: { ...flag, title, description, imageUrl, country },
       });

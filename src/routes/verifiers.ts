@@ -26,7 +26,7 @@ router.get('/', (req: Request, res: Response) => {
   const registrationSecurity = getVerifiersByTargetAndType('registration', 'security');
 
   res.render('pages/verifiers.njk', {
-    title: 'Verifiers - Fun with Flags (and Passkeys)',
+    title: 'Verifiers - Fun with Flags and Passkeys',
     authenticationDemo,
     registrationDemo,
     authenticationSecurity,

@@ -7,7 +7,7 @@ app.listen(PORT, () => {
   console.log(`
   ╔═══════════════════════════════════════════════════════════╗
   ║                                                           ║
-  ║   🚩 Fun with Flags (and Passkeys) - Learning Platform    ║
+  ║   🚩 Fun with Flags and Passkeys - Learning Platform    ║
   ║                                                           ║
   ║   Server running at http://localhost:${PORT}                 ║
   ║                                                           ║

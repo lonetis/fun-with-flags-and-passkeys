@@ -42,7 +42,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     res.render('pages/profile.njk', {
-      title: `${user.username} - Fun with Flags (and Passkeys)`,
+      title: `${user.username} - Fun with Flags and Passkeys`,
       profile: {
         id: user.id,
         username: user.username,

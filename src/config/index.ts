@@ -16,7 +16,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   sessionSecret: process.env.SESSION_SECRET || 'changeme',
-  rpName: 'Fun with Flags (and Passkeys)',
+  rpName: 'Fun with Flags and Passkeys',
   rpId: process.env.RP_ID || 'localhost',
   origin: process.env.ORIGIN || 'http://localhost:3000',
   mongoUri: process.env.MONGO_URI || '',

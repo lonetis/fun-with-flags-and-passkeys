@@ -29,7 +29,7 @@ app.use(cookieParser());
 // Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'fun-with-flags-secret-change-in-production',
+    secret: process.env.SESSION_SECRET || 'changeme',
     resave: false,
     saveUninitialized: false,
     cookie: {

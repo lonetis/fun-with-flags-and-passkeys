@@ -14,79 +14,69 @@ Open http://localhost:3000
 
 ## Production Deployment
 
-Use Docker to deploy in production.
+```bash
+cp .env.example .env
+# Edit .env for production
+```
 
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `SESSION_SECRET` | Session encryption key | (insecure default) | **Yes** |
-| `RP_ID` | WebAuthn Relying Party ID (your domain) | `localhost` | **Yes** |
-| `ORIGIN` | Expected origin for WebAuthn | `http://localhost:3000` | **Yes** |
-| `USE_MONGO` | Enable MongoDB storage | `false` | No |
-| `MONGO_URI` | MongoDB connection string | (empty) | If USE_MONGO=true |
-| `INSTANCE_MAX_AGE_MS` | Max instance age before cleanup (ms) | `86400000` (24h) | No |
-| `CLEANUP_INTERVAL_MS` | Cleanup check interval (ms) | `3600000` (1h) | No |
-
-### Pull from GitHub Container Registry
+### Docker Run
 
 ```bash
-docker pull ghcr.io/lonetis/fun-with-flags:latest
-
 docker run -d \
   --name fun-with-flags \
   -p 3000:3000 \
-  -e SESSION_SECRET=your-secure-secret-here \
-  -e RP_ID=your-domain.com \
-  -e ORIGIN=https://your-domain.com \
+  --env-file .env \
   -v fun-with-flags-data:/app/data/instances \
   ghcr.io/lonetis/fun-with-flags:latest
 ```
 
-### Docker Compose (with MongoDB)
-
-Create a `docker-compose.yml` file:
+### Docker Compose
 
 ```yaml
 services:
-  app:
+  fun-with-flags:
     image: ghcr.io/lonetis/fun-with-flags:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - SESSION_SECRET=${SESSION_SECRET}
-      - RP_ID=${RP_ID}
-      - ORIGIN=${ORIGIN}
-      - USE_MONGO=true
-      - MONGO_URI=mongodb://mongo:27017/funwithflags
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "3000"
     volumes:
       - instance-data:/app/data/instances
-    depends_on:
-      - mongo
-    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.funwithflags.rule=Host(`YOUR_DOMAIN`)"
+      - "traefik.http.routers.funwithflags.entrypoints=websecure"
+      - "traefik.http.routers.funwithflags.tls.certresolver=letsencrypt"
+      - "traefik.http.services.funwithflags.loadbalancer.server.port=3000"
 
   mongo:
     image: mongo:7
+    restart: unless-stopped
     volumes:
       - mongo-data:/data/db
+
+  traefik:
+    image: traefik:v3.2
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:443
+      - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL=YOUR_EMAIL
+      - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE=/letsencrypt/acme.json
+      - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE_ENTRYPOINT=web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt-data:/letsencrypt
 
 volumes:
   instance-data:
   mongo-data:
-```
-
-Then run:
-
-```bash
-# Create .env file with your secrets
-echo "SESSION_SECRET=$(openssl rand -base64 32)" > .env
-echo "RP_ID=your-domain.com" >> .env
-echo "ORIGIN=https://your-domain.com" >> .env
-
-# Start services
-docker compose up -d
+  letsencrypt-data:
 ```
 
 ## Default Users

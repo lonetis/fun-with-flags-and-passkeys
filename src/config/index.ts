@@ -15,7 +15,7 @@ const verifierConfig = verifiersJson as VerifierConfig;
 export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
-  sessionSecret: process.env.SESSION_SECRET || 'fun-with-flags-secret-change-in-production',
+  sessionSecret: process.env.SESSION_SECRET || 'changeme',
   rpName: 'Fun with Flags',
   rpId: process.env.RP_ID || 'localhost',
   origin: process.env.ORIGIN || 'http://localhost:3000',

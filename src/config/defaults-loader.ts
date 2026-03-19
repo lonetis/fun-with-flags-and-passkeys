@@ -62,6 +62,8 @@ function applyPasskeyOverrides(passkeys: Passkey[]): Passkey[] {
 
   try {
     // PASSKEY_KEYS is a base64-encoded JSON array of passkey overrides
+    // Only publicKey and credentialId are replaced — metadata (signCount,
+    // aaguid, transports, name, etc.) stays identical to defaults.json
     const decoded = Buffer.from(passkeysJson, 'base64').toString('utf-8');
     const overrides = JSON.parse(decoded) as Array<{
       id: number;
